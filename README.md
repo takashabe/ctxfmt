@@ -1,6 +1,6 @@
 # recv-context
 
-"recv-context" is a CLI tool designed for listing Go language methods that do not include ctx context.Context in their arguments. This tool is particularly useful for developers looking to ensure context propagation in their Go applications.
+"recv-context" is a CLI tool designed for listing Go language methods that do not include context.Context in their arguments. This tool is particularly useful for developers looking to ensure context propagation in their Go applications.
 
 ## Usage
 
