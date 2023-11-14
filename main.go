@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"go/token"
+	"log"
 	"os"
+
+	"github.com/urfave/cli/v2"
 )
 
 var ignoreFiles = []string{
@@ -16,50 +20,61 @@ var ignoreFuncs = []string{
 	"Scan",
 }
 
-type inspectType string
+var dryrun bool
 
-const (
-	inspectTypeInterface  inspectType = "interface"
-	inspectTypeInterface2 inspectType = "rewrite_interface"
-	inspectTypeMethod     inspectType = "method"
-	inspectTypeMethod2    inspectType = "rewrite_method"
-)
+var dryrunFlag = &cli.BoolFlag{
+	Name:        "dryrun",
+	Aliases:     []string{"n"},
+	Usage:       "dryrun",
+	Destination: &dryrun,
+}
 
 func main() {
-	if len(os.Args) < 3 {
-		os.Exit(1)
-	}
+	app := &cli.App{
+		Commands: []*cli.Command{
+			{
+				Name:      "interface",
+				Aliases:   []string{"i"},
+				Usage:     "format interface",
+				Flags:     []cli.Flag{dryrunFlag},
+				ArgsUsage: "file/dir",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() < 1 {
+						return fmt.Errorf("invalid args")
+					}
 
-	switch typ := os.Args[1]; typ {
-	case string(inspectTypeInterface):
-		fs := token.NewFileSet()
-		for _, arg := range os.Args[2:] {
-			if err := inspectInterface(fs, arg); err != nil {
-				panic(err)
-			}
-		}
-	case string(inspectTypeInterface2):
-		fs := token.NewFileSet()
-		for _, arg := range os.Args[2:] {
-			if err := rewirteInterface(fs, arg); err != nil {
-				panic(err)
-			}
-		}
-	case string(inspectTypeMethod):
-		fs := token.NewFileSet()
-		for _, arg := range os.Args[2:] {
-			if err := inspectMethod(fs, arg); err != nil {
-				panic(err)
-			}
-		}
-	case string(inspectTypeMethod2):
-		fs := token.NewFileSet()
-		for _, arg := range os.Args[2:] {
-			if err := inspectMethod2(fs, arg); err != nil {
-				panic(err)
-			}
-		}
-	default:
-		panic("invalid type")
+					fs := token.NewFileSet()
+					for _, arg := range c.Args().Slice() {
+						if err := fmtInterface(fs, arg, dryrun); err != nil {
+							return err
+						}
+					}
+					return nil
+				},
+			},
+			{
+				Name:      "method",
+				Aliases:   []string{"m"},
+				Usage:     "format method",
+				Flags:     []cli.Flag{dryrunFlag},
+				ArgsUsage: "file/dir",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() < 1 {
+						return fmt.Errorf("invalid args")
+					}
+
+					fs := token.NewFileSet()
+					for _, arg := range c.Args().Slice() {
+						if err := fmtMethod(fs, arg, dryrun); err != nil {
+							return err
+						}
+					}
+					return nil
+				},
+			},
+		},
+	}
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
 }
