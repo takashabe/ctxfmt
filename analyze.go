@@ -82,6 +82,7 @@ func rewirteInterface(fs *token.FileSet, filename string) error {
 	if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil {
 		panic(err)
 	}
+	fmt.Printf("processed %s\n", filename)
 
 	return nil
 }
@@ -98,29 +99,77 @@ func inspectMethod(fs *token.FileSet, filename string) error {
 
 	ast.Inspect(file, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
-		if !ok || fn.Name == nil {
-			return true
+		if ok && fn.Name != nil {
+			if !isIgnoreFuncName(fn.Name.Name) {
+				if fn.Recv != nil {
+					if fn.Type.Params != nil && len(fn.Type.Params.List) > 0 {
+						if unicode.IsUpper(rune(fn.Name.Name[0])) {
+							if !hasContextParam(fn.Type.Params.List) {
+								pos := fs.Position(fn.Pos())
+								reportMethod(pos.Filename, fn.Name.Name, fn.Recv, pos.Line)
+							}
+						}
+					}
+				}
+			}
 		}
 
-		if fn.Recv == nil {
-			return false
-		}
-
-		if fn.Type.Params == nil || len(fn.Type.Params.List) == 0 {
-			return false
-		}
-
-		if !unicode.IsUpper(rune(fn.Name.Name[0])) {
-			return false
-		}
-
-		if !hasContextParam(fn.Type.Params.List) {
-			pos := fs.Position(fn.Pos())
-			reportMethod(pos.Filename, fn.Name.Name, fn.Recv, pos.Line)
-		}
-
-		return false
+		return true
 	})
+	return nil
+}
+
+func inspectMethod2(fs *token.FileSet, filename string) error {
+	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
+	if err != nil {
+		return nil
+	}
+	if isIgnoreFile(fs.Position(file.Pos()).Filename) {
+		return nil
+	}
+
+	astutil.AddImport(fs, file, "context")
+	var isApply bool
+	astutil.Apply(file, func(cr *astutil.Cursor) bool {
+		n := cr.Node()
+		fn, ok := n.(*ast.FuncDecl)
+		if ok && fn.Name != nil {
+			if !isIgnoreFuncName(fn.Name.Name) {
+				if fn.Recv != nil {
+					if fn.Type.Params != nil && len(fn.Type.Params.List) > 0 {
+						if unicode.IsUpper(rune(fn.Name.Name[0])) {
+							if !hasContextParam(fn.Type.Params.List) {
+								contextParam := &ast.Field{
+									Names: []*ast.Ident{ast.NewIdent("ctx")},
+									Type: &ast.SelectorExpr{
+										X:   ast.NewIdent("context"),
+										Sel: ast.NewIdent("Context"),
+									},
+								}
+								fn.Type.Params.List = append([]*ast.Field{contextParam}, fn.Type.Params.List...)
+								isApply = true
+							}
+						}
+					}
+				}
+			}
+		}
+		return true
+	}, nil)
+
+	if !isApply {
+		return nil
+	}
+
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fs, file); err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil {
+		panic(err)
+	}
+	fmt.Printf("processed %s\n", filename)
+
 	return nil
 }
 
@@ -157,6 +206,15 @@ func reportMethod(filename, funcName string, recv *ast.FieldList, line int) {
 func isIgnoreFile(fileName string) bool {
 	for _, ignoreFile := range ignoreFiles {
 		if strings.Contains(fileName, ignoreFile) {
+			return true
+		}
+	}
+	return false
+}
+
+func isIgnoreFuncName(funcName string) bool {
+	for _, ignoreFunc := range ignoreFuncs {
+		if strings.Contains(funcName, ignoreFunc) {
 			return true
 		}
 	}
