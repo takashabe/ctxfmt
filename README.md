@@ -1,18 +1,34 @@
-# recv-context
+## Overview
 
-"recv-context" is a CLI tool designed for listing Go language methods that do not include context.Context in their arguments. This tool is particularly useful for developers looking to ensure context propagation in their Go applications.
+ctxfmt is an linter tool for Go developers, designed to enhance the readability and maintainability of Go codebases by ensuring the consistent use of `context.Context` in interface method definitions and implementations. This tool automatically adds `context.Context` as the first parameter in methods where it's missing.
+
+## Features
+
+- **Automatic Injection**: ContextLint automatically injects `context.Context` as the first parameter in interface methods and their implementations if it's missing.
+- **Dry Run Mode**: Offers a dry run option to report where changes would be made without actually modifying the code.
+
+## Installation
+
+```bash
+go get -u github.com/takashabe/ctxfmt
+```
 
 ## Usage
 
-```
-$ go run . $GOPATH/src/github.com/takashabe/btcli/pkg/**
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/bigtable/bigtable_mock.go at line 80: mr.Get()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/bigtable/bigtable_mock.go at line 100: mr.GetRows()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/bigtable/bigtable_mock.go at line 116: mr.Count()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/bigtable/bigtable_mock.go at line 131: mr.Tables()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/cmd/interactive/completer.go at line 17: c.Do()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/cmd/interactive/executor.go at line 33: e.Do()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/cmd/interactive/interactive.go at line 37: c.Run()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/printer/printer.go at line 28: w.PrintRows()
-/Users/takashabe/dev/src/github.com/takashabe/btcli/pkg/printer/printer.go at line 35: w.PrintRow()
-```
+ContextLint can be run in two modes: normal and dry run.
+
+- **Automatic Injection**: This will modify your Go files directly, adding `context.Context` where necessary.
+
+  ```bash
+  contextlint ./...
+  ```
+
+- **Dry Run Mode**: Use this to see what changes would be made without applying them.
+
+  ```bash
+  contextlint --dry-run ./...
+  ```
+
+## Configuration
+
+TODO
