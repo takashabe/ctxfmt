@@ -29,6 +29,15 @@ var dryrunFlag = &cli.BoolFlag{
 	Destination: &dryrun,
 }
 
+var pkgName string
+
+var pkgFlag = &cli.StringFlag{
+	Name:        "pkg",
+	Aliases:     []string{"p"},
+	Usage:       "package name",
+	Destination: &pkgName,
+}
+
 func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -66,6 +75,31 @@ func main() {
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
 						if err := fmtMethod(fs, arg, dryrun); err != nil {
+							return err
+						}
+					}
+					return nil
+				},
+			},
+			{
+				Name: "invoke",
+				Flags: []cli.Flag{
+					dryrunFlag,
+					pkgFlag,
+				},
+				ArgsUsage: "file/dir",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() < 1 {
+						return fmt.Errorf("invalid args")
+					}
+
+					if pkgName == "" {
+						return fmt.Errorf("invalid pkg name")
+					}
+
+					fs := token.NewFileSet()
+					for _, arg := range c.Args().Slice() {
+						if err := invoke(fs, arg, pkgName); err != nil {
 							return err
 						}
 					}
