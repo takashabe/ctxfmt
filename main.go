@@ -42,6 +42,27 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
+				Name:      "signature",
+				Aliases:   []string{"s"},
+				Usage:     "format function / method signature",
+				Flags:     []cli.Flag{dryrunFlag},
+				ArgsUsage: "file/dir",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() < 1 {
+						return fmt.Errorf("invalid args")
+					}
+
+					fs := token.NewFileSet()
+					for _, arg := range c.Args().Slice() {
+						if err := fmtSignature(fs, arg, dryrun); err != nil {
+							return err
+						}
+					}
+					return nil
+				},
+			},
+
+			{
 				Name:      "interface",
 				Aliases:   []string{"i"},
 				Usage:     "format interface",
