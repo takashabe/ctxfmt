@@ -14,22 +14,22 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func fmtSignature(fs *token.FileSet, filename string, dryrun bool) error {
-	info, err := os.Stat(filename)
+func fmtSignature(fs *token.FileSet, fileName string, dryrun bool) error {
+	info, err := os.Stat(fileName)
 	if err != nil {
 		return err
 	}
 	if info.IsDir() {
 		return nil
 	}
-	if !strings.HasSuffix(filename, ".go") {
+	if !strings.HasSuffix(fileName, ".go") {
 		return nil
 	}
 	if isIgnoreFile(info.Name()) {
 		return nil
 	}
 
-	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
+	file, err := parser.ParseFile(fs, fileName, nil, parser.ParseComments)
 	if err != nil {
 		return err
 	}
@@ -99,12 +99,12 @@ func fmtSignature(fs *token.FileSet, filename string, dryrun bool) error {
 
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fs, file); err != nil {
-		panic(err)
+		return err
 	}
-	if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil {
-		panic(err)
+	if err := os.WriteFile(fileName, buf.Bytes(), 0o644); err != nil {
+		return err
 	}
-	fmt.Printf("processed %s\n", filename)
+	fmt.Printf("processed %s\n", fileName)
 
 	return nil
 }

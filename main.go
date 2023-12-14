@@ -42,9 +42,8 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name:    "signature",
-				Aliases: []string{"s"},
-				Usage:   "format function / method signature",
+				Name:  "signature",
+				Usage: "format function / method signature",
 				Flags: []cli.Flag{
 					dryrunFlag,
 					pkgFlag,
@@ -53,6 +52,9 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("invalid args")
+					}
+					if pkgName == "" {
+						return fmt.Errorf("invalid pkg name")
 					}
 
 					fs := token.NewFileSet()
@@ -64,49 +66,8 @@ func main() {
 					return nil
 				},
 			},
-
 			{
-				Name:      "interface",
-				Aliases:   []string{"i"},
-				Usage:     "format interface",
-				Flags:     []cli.Flag{dryrunFlag},
-				ArgsUsage: "file/dir",
-				Action: func(c *cli.Context) error {
-					if c.Args().Len() < 1 {
-						return fmt.Errorf("invalid args")
-					}
-
-					fs := token.NewFileSet()
-					for _, arg := range c.Args().Slice() {
-						if err := fmtInterface(fs, arg, dryrun); err != nil {
-							return err
-						}
-					}
-					return nil
-				},
-			},
-			{
-				Name:      "method",
-				Aliases:   []string{"m"},
-				Usage:     "format method",
-				Flags:     []cli.Flag{dryrunFlag},
-				ArgsUsage: "file/dir",
-				Action: func(c *cli.Context) error {
-					if c.Args().Len() < 1 {
-						return fmt.Errorf("invalid args")
-					}
-
-					fs := token.NewFileSet()
-					for _, arg := range c.Args().Slice() {
-						if err := fmtMethod(fs, arg, dryrun); err != nil {
-							return err
-						}
-					}
-					return nil
-				},
-			},
-			{
-				Name: "invoke",
+				Name: "arg",
 				Flags: []cli.Flag{
 					dryrunFlag,
 					pkgFlag,
@@ -116,14 +77,13 @@ func main() {
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("invalid args")
 					}
-
 					if pkgName == "" {
 						return fmt.Errorf("invalid pkg name")
 					}
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := invoke(fs, arg, pkgName); err != nil {
+						if err := fmtArg(fs, arg, pkgName, dryrun); err != nil {
 							return err
 						}
 					}
