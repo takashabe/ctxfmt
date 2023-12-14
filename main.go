@@ -42,10 +42,13 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name:      "signature",
-				Aliases:   []string{"s"},
-				Usage:     "format function / method signature",
-				Flags:     []cli.Flag{dryrunFlag},
+				Name:    "signature",
+				Aliases: []string{"s"},
+				Usage:   "format function / method signature",
+				Flags: []cli.Flag{
+					dryrunFlag,
+					pkgFlag,
+				},
 				ArgsUsage: "file/dir",
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() < 1 {
