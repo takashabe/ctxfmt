@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
@@ -22,15 +21,12 @@ func fmtArg(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
 	if err != nil {
 		return err
 	}
-	if info.IsDir() {
+	if !info.IsDir() {
 		return nil
 	}
-	if !strings.HasSuffix(filename, ".go") {
-		return nil
-	}
-	if isIgnoreFile(info.Name()) {
-		return nil
-	}
+	// if isIgnoreFile(info.Name()) {
+	//   return nil
+	// }
 
 	pkgDir, err := filepath.Abs(filename)
 	if err != nil {
@@ -70,10 +66,12 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 		return err
 	}
 
+	astutil.AddImport(fs, file, "context")
+	var isApply bool
 	astutil.Apply(file, func(cr *astutil.Cursor) bool {
 		if callExpr, ok := cr.Node().(*ast.CallExpr); ok {
 			if selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr); ok {
-				if _, ok := selectorExpr.X.(*ast.Ident); ok && selectorExpr.Sel.Name == funcName {
+				if ident, ok := selectorExpr.X.(*ast.Ident); ok && selectorExpr.Sel.Name == funcName {
 					// 既に最初の引数が context.Context のようなものかどうかをチェック
 					if len(callExpr.Args) > 0 {
 						firstArg := callExpr.Args[0]
@@ -91,13 +89,23 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 						}
 					}
 
-					contextCall := ast.NewIdent("context.TODO()")
-					callExpr.Args = append([]ast.Expr{contextCall}, callExpr.Args...)
+					if dryrun {
+						pos := fs.Position(ident.Pos())
+						reportArgs(pos.Filename, funcName, pos.Line)
+					} else {
+						contextCall := ast.NewIdent("context.TODO()")
+						callExpr.Args = append([]ast.Expr{contextCall}, callExpr.Args...)
+						isApply = true
+					}
 				}
 			}
 		}
 		return true
 	}, nil)
+
+	if !isApply {
+		return nil
+	}
 
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fs, file); err != nil {
@@ -109,6 +117,10 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 	fmt.Printf("processed %s\n", fileName)
 
 	return nil
+}
+
+func reportArgs(filename, funcName string, line int) {
+	fmt.Printf("%s at line %d: %s()\n", filename, line, funcName)
 }
 
 var (
