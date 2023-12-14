@@ -29,23 +29,37 @@ var dryrunFlag = &cli.BoolFlag{
 	Destination: &dryrun,
 }
 
+var pkgName string
+
+var pkgFlag = &cli.StringFlag{
+	Name:        "pkg",
+	Aliases:     []string{"p"},
+	Usage:       "package name",
+	Destination: &pkgName,
+}
+
 func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name:      "interface",
-				Aliases:   []string{"i"},
-				Usage:     "format interface",
-				Flags:     []cli.Flag{dryrunFlag},
+				Name:  "signature",
+				Usage: "format function / method signature",
+				Flags: []cli.Flag{
+					dryrunFlag,
+					pkgFlag,
+				},
 				ArgsUsage: "file/dir",
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("invalid args")
 					}
+					if pkgName == "" {
+						return fmt.Errorf("invalid pkg name")
+					}
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtInterface(fs, arg, dryrun); err != nil {
+						if err := fmtSignature(fs, arg, dryrun); err != nil {
 							return err
 						}
 					}
@@ -53,19 +67,23 @@ func main() {
 				},
 			},
 			{
-				Name:      "method",
-				Aliases:   []string{"m"},
-				Usage:     "format method",
-				Flags:     []cli.Flag{dryrunFlag},
+				Name: "arg",
+				Flags: []cli.Flag{
+					dryrunFlag,
+					pkgFlag,
+				},
 				ArgsUsage: "file/dir",
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("invalid args")
 					}
+					if pkgName == "" {
+						return fmt.Errorf("invalid pkg name")
+					}
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtMethod(fs, arg, dryrun); err != nil {
+						if err := fmtArg(fs, arg, pkgName, dryrun); err != nil {
 							return err
 						}
 					}
