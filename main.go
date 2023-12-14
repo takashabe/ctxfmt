@@ -9,11 +9,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var ignoreFiles = []string{
-	"mock_",
-	"_sheet",
-}
-
 var ignoreFuncs = []string{
 	"PreInsert",
 	"PreUpdate",
@@ -83,7 +78,7 @@ func main() {
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtArg(fs, arg, pkgName, dryrun); err != nil {
+						if err := fmtArgs(fs, arg, pkgName, dryrun); err != nil {
 							return err
 						}
 					}
