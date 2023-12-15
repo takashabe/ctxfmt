@@ -39,7 +39,7 @@ type config struct {
 
 var (
 	configFile     string
-	configFilePath = &cli.StringFlag{
+	configFileFlag = &cli.StringFlag{
 		Name:        "config",
 		Aliases:     []string{"c"},
 		Usage:       "config file path",
@@ -56,6 +56,7 @@ func main() {
 				Flags: []cli.Flag{
 					dryrunFlag,
 					pkgFlag,
+					configFileFlag,
 				},
 				ArgsUsage: "target file or directory",
 				Action: func(c *cli.Context) error {
@@ -80,10 +81,11 @@ func main() {
 				},
 			},
 			{
-				Name: "arg",
+				Name: "args",
 				Flags: []cli.Flag{
 					dryrunFlag,
 					pkgFlag,
+					configFileFlag,
 				},
 				ArgsUsage: "target directory",
 				Action: func(c *cli.Context) error {
