@@ -10,7 +10,7 @@
 ## Installation
 
 ```bash
-go intall github.com/takashabe/ctxfmt@latest
+$ go intall github.com/takashabe/ctxfmt@latest
 ```
 
 ## Usage
