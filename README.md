@@ -1,5 +1,5 @@
 ## Overview
-ctxfmt is a tool designed to automate the insertion of context.Context in Go method declarations and calls. It's especially useful for existing codebases, allowing for seamless integration of context handling.
+`ctxfmt` is a tool designed to automate the insertion of context.Context in Go method declarations and calls. It's especially useful for existing codebases, allowing for seamless integration of context handling.
 
 ## Features
 
