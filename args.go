@@ -7,7 +7,6 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -24,9 +23,6 @@ func fmtArgs(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
 	if !info.IsDir() {
 		return nil
 	}
-	// if isIgnoreFile(info.Name()) {
-	//   return nil
-	// }
 
 	pkgDir, err := filepath.Abs(filename)
 	if err != nil {
@@ -39,7 +35,7 @@ func fmtArgs(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
 
 	pkgs, err := packages.Load(cfg, pkgName)
 	if err != nil {
-		log.Fatalf("failed to load packages: %v", err)
+		return err
 	}
 
 	for _, pkg := range pkgs {
@@ -51,7 +47,7 @@ func fmtArgs(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
 			for _, name := range funcNames {
 				for _, file := range pkg.CompiledGoFiles {
 					if err := addContextToFunctionCall(fs, file, name); err != nil {
-						log.Fatalf("failed to add context to function call: %v", err)
+						return err
 					}
 				}
 			}

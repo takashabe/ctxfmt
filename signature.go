@@ -25,9 +25,6 @@ func fmtSignature(fs *token.FileSet, fileName string, dryrun bool) error {
 	if !strings.HasSuffix(fileName, ".go") {
 		return nil
 	}
-	if isIgnoreFile(info.Name()) {
-		return nil
-	}
 
 	file, err := parser.ParseFile(fs, fileName, nil, parser.ParseComments)
 	if err != nil {
@@ -40,7 +37,7 @@ func fmtSignature(fs *token.FileSet, fileName string, dryrun bool) error {
 		switch decl := cr.Node().(type) {
 		case *ast.FuncDecl:
 			if decl.Name != nil {
-				if !isIgnoreFuncName(decl.Name.Name) {
+				if !isIgnoreFunc(decl.Name.Name) {
 					if decl.Recv != nil {
 						if decl.Type.Params != nil && len(decl.Type.Params.List) > 0 {
 							if unicode.IsUpper(rune(decl.Name.Name[0])) {
@@ -107,4 +104,34 @@ func fmtSignature(fs *token.FileSet, fileName string, dryrun bool) error {
 	fmt.Printf("processed %s\n", fileName)
 
 	return nil
+}
+
+func hasContextParam(fields []*ast.Field) bool {
+	for _, field := range fields {
+		if typExpr, ok := field.Type.(*ast.SelectorExpr); ok {
+			if pkgIdent, ok := typExpr.X.(*ast.Ident); ok {
+				if pkgIdent.Name == "context" && typExpr.Sel.Name == "Context" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func reportInterface(filename, funcName string, typeSpec *ast.TypeSpec, line int) {
+	fmt.Printf("%s at line %d: %s.%s()\n", filename, line, typeSpec.Name.Name, funcName)
+}
+
+func reportMethod(filename, funcName string, recv *ast.FieldList, line int) {
+	var recvName string
+	if recv != nil && len(recv.List) > 0 {
+		if len(recv.List[0].Names) > 0 {
+			recvName = recv.List[0].Names[0].Name
+		} else if recvType, ok := recv.List[0].Type.(*ast.Ident); ok {
+			recvName = recvType.Name
+		}
+	}
+
+	fmt.Printf("%s at line %d: %s.%s()\n", filename, line, recvName, funcName)
 }
