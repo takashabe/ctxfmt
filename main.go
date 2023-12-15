@@ -55,16 +55,12 @@ func main() {
 				Usage: "format function, method signature",
 				Flags: []cli.Flag{
 					dryrunFlag,
-					pkgFlag,
 					configFileFlag,
 				},
 				ArgsUsage: "target file or directory",
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("invalid args")
-					}
-					if pkgName == "" {
-						return fmt.Errorf("invalid pkg name")
 					}
 
 					if err := loadConfig(configFile); err != nil {

@@ -68,17 +68,14 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 		if callExpr, ok := cr.Node().(*ast.CallExpr); ok {
 			if selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr); ok {
 				if ident, ok := selectorExpr.X.(*ast.Ident); ok && selectorExpr.Sel.Name == funcName {
-					// 既に最初の引数が context.Context のようなものかどうかをチェック
 					if len(callExpr.Args) > 0 {
 						firstArg := callExpr.Args[0]
 						switch arg := firstArg.(type) {
 						case *ast.Ident:
 							if arg.Name == "ctx" {
-								// 最初の引数が "ctx" なのでスキップ
 								return true
 							}
 						case *ast.SelectorExpr:
-							// 第一引数がcontextパッケージの関数呼び出しであればスキップ
 							if xIdent, ok := arg.X.(*ast.Ident); ok && xIdent.Name == "context" {
 								return true
 							}
@@ -119,21 +116,16 @@ func reportArgs(filename, funcName string, line int) {
 	fmt.Printf("%s at line %d: %s()\n", filename, line, funcName)
 }
 
-var (
-	interfaceMethodRegex = regexp.MustCompile(`want (\w+)\(context\.Context,`)
-	functionCallRegex    = regexp.MustCompile(`not enough arguments in call to [\w.]+\b\.(\w+)`)
-)
+var functionCallRegex = regexp.MustCompile(`not enough arguments in call to [\w.]+\b\.(\w+)`)
 
 // notEnoughContextArgs returns function names that have not enough context.Context arguments.
 func notEnoughContextArgs(errMessage string) ([]string, bool) {
 	var funcNames []string
 
-	for _, ptn := range []*regexp.Regexp{interfaceMethodRegex, functionCallRegex} {
-		matches := ptn.FindAllStringSubmatch(errMessage, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				funcNames = append(funcNames, match[1])
-			}
+	matches := functionCallRegex.FindAllStringSubmatch(errMessage, -1)
+	for _, match := range matches {
+		if len(match) >= 2 {
+			funcNames = append(funcNames, match[1])
 		}
 	}
 	return funcNames, len(funcNames) > 0
