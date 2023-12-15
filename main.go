@@ -49,10 +49,13 @@ var (
 
 func main() {
 	app := &cli.App{
+		Name:     "ctxfmt",
+		HelpName: "",
+		Usage:    "context.Context formatter",
 		Commands: []*cli.Command{
 			{
-				Name:  "signature",
-				Usage: "format function, method signature",
+				Name:  "def",
+				Usage: "format method definition",
 				Flags: []cli.Flag{
 					dryrunFlag,
 					configFileFlag,
@@ -69,7 +72,7 @@ func main() {
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtSignature(fs, arg, dryrun); err != nil {
+						if err := fmtDef(fs, arg, dryrun); err != nil {
 							return err
 						}
 					}
@@ -77,7 +80,8 @@ func main() {
 				},
 			},
 			{
-				Name: "args",
+				Name:  "call",
+				Usage: "format method call",
 				Flags: []cli.Flag{
 					dryrunFlag,
 					pkgFlag,
@@ -98,7 +102,7 @@ func main() {
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtArgs(fs, arg, pkgName, dryrun); err != nil {
+						if err := fmtCall(fs, arg, pkgName, dryrun); err != nil {
 							return err
 						}
 					}

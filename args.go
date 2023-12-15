@@ -15,7 +15,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func fmtArgs(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
+func fmtCall(fs *token.FileSet, filename, pkgName string, dryrun bool) error {
 	info, err := os.Stat(filename)
 	if err != nil {
 		return err

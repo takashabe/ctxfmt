@@ -14,7 +14,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func fmtSignature(fs *token.FileSet, fileName string, dryrun bool) error {
+func fmtDef(fs *token.FileSet, fileName string, dryrun bool) error {
 	info, err := os.Stat(fileName)
 	if err != nil {
 		return err
