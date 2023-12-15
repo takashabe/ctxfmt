@@ -1,34 +1,79 @@
 ## Overview
-
-ctxfmt is an linter tool for Go developers, designed to enhance the readability and maintainability of Go codebases by ensuring the consistent use of `context.Context` in interface method definitions and implementations. This tool automatically adds `context.Context` as the first parameter in methods where it's missing.
+ctxfmt is a tool designed to automate the insertion of context.Context in Go method declarations and calls. It's especially useful for existing codebases, allowing for seamless integration of context handling.
 
 ## Features
 
-- **Automatic Injection**: ContextLint automatically injects `context.Context` as the first parameter in interface methods and their implementations if it's missing.
-- **Dry Run Mode**: Offers a dry run option to report where changes would be made without actually modifying the code.
+- Method Definition Completion: Automatically adds ctx context.Context to method declarations in interfaces and existing method definitions.
+- Method Call Completion: Inserts context.TODO() in method calls where arguments are insufficient.
+- Dry-Run Mode: Acts as a linter for code not yet using context, allowing you to preview changes without applying them.
 
 ## Installation
 
 ```bash
-go get -u github.com/takashabe/ctxfmt
+go intall github.com/takashabe/ctxfmt@latest
 ```
 
 ## Usage
 
-ContextLint can be run in two modes: normal and dry run.
+### Method Definition Completion
 
-- **Automatic Injection**: This will modify your Go files directly, adding `context.Context` where necessary.
+```bash
+$ ctxfmt signature $GOPATH/src/github.com/takashabe/ctxfmt/examples/**
+```
 
-  ```bash
-  contextlint ./...
-  ```
+This command modifies the code as follows:
+- ctx context.Context is added to method definitions
+- The import "context" statement is included automatically
 
-- **Dry Run Mode**: Use this to see what changes would be made without applying them.
+```diff
+@@ -1,12 +1,14 @@
+ package main
 
-  ```bash
-  contextlint --dry-run ./...
-  ```
++import "context"
++
+ type Interface interface {
+-       Foo(id int)
++       Foo(ctx context.Context, id int)
+ }
 
-## Configuration
+ type impl struct{}
 
-TODO
+-func (i *impl) Foo(id int) {}
++func (i *impl) Foo(ctx context.Context, id int) {}
+
+ func main() {
+        i := &impl{}
+```
+
+### Method Call Completion
+
+```bash
+$ ctxfmt args --pkg 'github.com/takashabe/ctxfmt/examples' $GOPATH/src/github.com/takashabe/ctxfmt/examples
+processed /Users/takashabe/dev/src/github.com/takashabe/ctxfmt/examples/main.go
+```
+
+This command modifies the code as follows:
+- add context.TODO() to method calls that require a context.Context argument
+
+```diff
+@@ -12,5 +12,5 @@ func (i *impl) Foo(ctx context.Context, id int) {}
+
+ func main() {
+        i := &impl{}
+-       i.Foo(1)
++       i.Foo(context.TODO(), 1)
+ }
+```
+
+#### :warning: Prerequisites
+
+Ensure the file has a compilation error like below, indicating missing context.Context in method calls:
+
+```bash
+
+$ go vet .
+# github.com/takashabe/ctxfmt/examples
+vet: ./main.go:15:9: not enough arguments in call to i.Foo
+        have (number)
+        want (context.Context, int)
+```
