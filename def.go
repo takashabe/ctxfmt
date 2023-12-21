@@ -95,10 +95,10 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 						// skip embedded interface
 						continue
 					}
-
 					if len(config.IgnoreFuncs) > 0 && containPartial(config.IgnoreFuncs, m.Names[0].Name) {
-						return true
+						continue
 					}
+
 					if method, ok := m.Type.(*ast.FuncType); ok {
 						if !hasContextParam(method.Params.List) {
 							if config.Dryrun {
