@@ -47,6 +47,24 @@ var (
 	}
 )
 
+var (
+	skipDefinedMethod     bool
+	skipDefinedMethodFlag = &cli.BoolFlag{
+		Name:        "skip-method",
+		Usage:       "skip defined method (not interface)",
+		Destination: &skipDefinedMethod,
+	}
+)
+
+var (
+	skipInterface     bool
+	skipInterfaceFlag = &cli.BoolFlag{
+		Name:        "skip-interface",
+		Usage:       "skip declared interface method",
+		Destination: &skipInterface,
+	}
+)
+
 func main() {
 	app := &cli.App{
 		Name:     "ctxfmt",
@@ -59,6 +77,8 @@ func main() {
 				Flags: []cli.Flag{
 					dryrunFlag,
 					configFileFlag,
+					skipDefinedMethodFlag,
+					skipInterfaceFlag,
 				},
 				ArgsUsage: "target file or directory",
 				Action: func(c *cli.Context) error {
@@ -72,7 +92,12 @@ func main() {
 
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
-						if err := fmtDef(fs, arg, dryrun); err != nil {
+						if err := fmtDef(fs, arg, formatDefConfig{
+							IgnoreFuncs:   ignoreFuncs,
+							Dryrun:        dryrun,
+							SkipMethod:    skipDefinedMethod,
+							SkipInterface: skipInterface,
+						}); err != nil {
 							return err
 						}
 					}
@@ -140,9 +165,9 @@ func loadConfig(configFile string) error {
 	return nil
 }
 
-func isIgnoreFunc(name string) bool {
-	for _, ignoreFunc := range ignoreFuncs {
-		if name == ignoreFunc {
+func isIgnoreFunc(target string, ignores []string) bool {
+	for _, ig := range ignores {
+		if target == ig {
 			return true
 		}
 	}

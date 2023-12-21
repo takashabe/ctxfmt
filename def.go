@@ -14,7 +14,14 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func fmtDef(fs *token.FileSet, fileName string, dryrun bool) error {
+type formatDefConfig struct {
+	IgnoreFuncs   []string
+	Dryrun        bool
+	SkipMethod    bool
+	SkipInterface bool
+}
+
+func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 	info, err := os.Stat(fileName)
 	if err != nil {
 		return err
@@ -36,13 +43,18 @@ func fmtDef(fs *token.FileSet, fileName string, dryrun bool) error {
 	astutil.Apply(file, func(cr *astutil.Cursor) bool {
 		switch decl := cr.Node().(type) {
 		case *ast.FuncDecl:
+			// for defined method (not interface)
+			if config.SkipMethod {
+				return true
+			}
 			if decl.Name != nil {
-				if !isIgnoreFunc(decl.Name.Name) {
+				// if !isIgnoreFunc(decl.Name.Name) {
+				if !isIgnoreFunc(decl.Name.Name, config.IgnoreFuncs) {
 					if decl.Recv != nil {
 						if decl.Type.Params != nil && len(decl.Type.Params.List) > 0 {
 							if unicode.IsUpper(rune(decl.Name.Name[0])) {
 								if !hasContextParam(decl.Type.Params.List) {
-									if dryrun {
+									if config.Dryrun {
 										pos := fs.Position(decl.Pos())
 										reportMethod(pos.Filename, decl.Name.Name, decl.Recv, pos.Line)
 									} else {
@@ -63,11 +75,15 @@ func fmtDef(fs *token.FileSet, fileName string, dryrun bool) error {
 				}
 			}
 		case *ast.TypeSpec:
+			// for declared interface method
+			if config.SkipInterface {
+				return true
+			}
 			if interfaceType, ok := decl.Type.(*ast.InterfaceType); ok {
 				for _, m := range interfaceType.Methods.List {
 					if method, ok := m.Type.(*ast.FuncType); ok {
 						if !hasContextParam(method.Params.List) {
-							if dryrun {
+							if config.Dryrun {
 								pos := fs.Position(m.Pos())
 								reportInterface(pos.Filename, m.Names[0].Name, decl, pos.Line)
 							} else {
