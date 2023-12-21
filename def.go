@@ -15,11 +15,12 @@ import (
 )
 
 type formatDefConfig struct {
-	IgnoreFuncs     []string
-	AllowInterfaces []string
-	Dryrun          bool
-	SkipMethod      bool
-	SkipInterface   bool
+	IgnoreFuncs      []string
+	AllowInterfaces  []string
+	IgnoreInterfaces []string
+	Dryrun           bool
+	SkipMethod       bool
+	SkipInterface    bool
 }
 
 func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
@@ -82,10 +83,19 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 				return true
 			}
 			if interfaceType, ok := decl.Type.(*ast.InterfaceType); ok {
+				if len(config.IgnoreInterfaces) > 0 && containPartial(config.IgnoreInterfaces, decl.Name.Name) {
+					return true
+				}
 				if len(config.AllowInterfaces) > 0 && !containPartial(config.AllowInterfaces, decl.Name.Name) {
 					return true
 				}
+
 				for _, m := range interfaceType.Methods.List {
+					if m.Names == nil {
+						// skip embedded interface
+						continue
+					}
+
 					if len(config.IgnoreFuncs) > 0 && containPartial(config.IgnoreFuncs, m.Names[0].Name) {
 						return true
 					}

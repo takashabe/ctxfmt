@@ -2,6 +2,9 @@ ignore_funcs:
 - Scan
 - Validate
 
+ignore_interfaces:
+- BadRepository
+
 allow_interfaces:
 - Repository
 - Service
