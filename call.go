@@ -84,7 +84,7 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 
 					if dryrun {
 						pos := fs.Position(ident.Pos())
-						reportArgs(pos.Filename, funcName, pos.Line)
+						reportArgs(pos.Filename, funcName, pos)
 					} else {
 						contextCall := ast.NewIdent("context.TODO()")
 						callExpr.Args = append([]ast.Expr{contextCall}, callExpr.Args...)
@@ -112,8 +112,8 @@ func addContextToFunctionCall(fs *token.FileSet, fileName, funcName string) erro
 	return nil
 }
 
-func reportArgs(filename, funcName string, line int) {
-	fmt.Printf("%s at line %d: %s()\n", filename, line, funcName)
+func reportArgs(filename, funcName string, pos token.Position) {
+	fmt.Printf("%s:%d:%d: %s() missing context.Context parameter\n", filename, pos.Line, pos.Column, funcName)
 }
 
 var functionCallRegex = regexp.MustCompile(`not enough arguments in call to [\w.]+\b\.(\w+)`)
