@@ -5,13 +5,12 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 	"github.com/urfave/cli/v2"
 )
-
-// ignoreFuncs is a list of function names to ignore.
-var ignoreFuncs []string
 
 var (
 	dryrun     bool
@@ -34,8 +33,16 @@ var (
 )
 
 type config struct {
-	IgnoreFuncs []string `yaml:"ignore_funcs"`
+	IgnoreFuncs     []string `yaml:"ignore_funcs"`
+	AllowInterfaces []string `yaml:"allow_interfaces"`
 }
+
+var (
+	// ignoreFuncs is a list of function names to ignore.
+	ignoreFuncs []string
+	// allowInterfaces is a list of interface names to allow.
+	allowInterfaces []string
+)
 
 var (
 	configFile     string
@@ -93,10 +100,11 @@ func main() {
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
 						if err := fmtDef(fs, arg, formatDefConfig{
-							IgnoreFuncs:   ignoreFuncs,
-							Dryrun:        dryrun,
-							SkipMethod:    skipDefinedMethod,
-							SkipInterface: skipInterface,
+							IgnoreFuncs:     ignoreFuncs,
+							AllowInterfaces: allowInterfaces,
+							Dryrun:          dryrun,
+							SkipMethod:      skipDefinedMethod,
+							SkipInterface:   skipInterface,
 						}); err != nil {
 							return err
 						}
@@ -158,9 +166,8 @@ func loadConfig(configFile string) error {
 	}
 
 	// TODO: support command line args
-	if len(cfg.IgnoreFuncs) > 0 {
-		ignoreFuncs = cfg.IgnoreFuncs
-	}
+	ignoreFuncs = cfg.IgnoreFuncs
+	allowInterfaces = cfg.AllowInterfaces
 
 	return nil
 }
@@ -172,4 +179,10 @@ func isIgnoreFunc(target string, ignores []string) bool {
 		}
 	}
 	return false
+}
+
+func containPartial(ss []string, e string) bool {
+	return slices.ContainsFunc(ss, func(s string) bool {
+		return strings.Contains(e, s)
+	})
 }
