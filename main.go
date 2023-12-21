@@ -33,15 +33,21 @@ var (
 )
 
 type config struct {
-	IgnoreFuncs     []string `yaml:"ignore_funcs"`
-	AllowInterfaces []string `yaml:"allow_interfaces"`
+	IgnoreFuncs []string `yaml:"ignore_funcs"`
+
+	AllowInterfaces  []string `yaml:"allow_interfaces"`
+	IgnoreInterfaces []string `yaml:"ignore_interfaces"`
 }
 
 var (
 	// ignoreFuncs is a list of function names to ignore.
 	ignoreFuncs []string
+
 	// allowInterfaces is a list of interface names to allow.
 	allowInterfaces []string
+
+	// ignoreinterfaces is a list of interface names to ignore.
+	ignoreinterfaces []string
 )
 
 var (
@@ -100,11 +106,12 @@ func main() {
 					fs := token.NewFileSet()
 					for _, arg := range c.Args().Slice() {
 						if err := fmtDef(fs, arg, formatDefConfig{
-							IgnoreFuncs:     ignoreFuncs,
-							AllowInterfaces: allowInterfaces,
-							Dryrun:          dryrun,
-							SkipMethod:      skipDefinedMethod,
-							SkipInterface:   skipInterface,
+							IgnoreFuncs:      ignoreFuncs,
+							AllowInterfaces:  allowInterfaces,
+							IgnoreInterfaces: ignoreinterfaces,
+							Dryrun:           dryrun,
+							SkipMethod:       skipDefinedMethod,
+							SkipInterface:    skipInterface,
 						}); err != nil {
 							return err
 						}
@@ -168,6 +175,7 @@ func loadConfig(configFile string) error {
 	// TODO: support command line args
 	ignoreFuncs = cfg.IgnoreFuncs
 	allowInterfaces = cfg.AllowInterfaces
+	ignoreinterfaces = cfg.IgnoreInterfaces
 
 	return nil
 }
