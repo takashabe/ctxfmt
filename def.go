@@ -60,7 +60,7 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 							if !hasContextParam(decl.Type.Params.List) {
 								if config.Dryrun {
 									pos := fs.Position(decl.Pos())
-									reportMethod(pos.Filename, decl.Name.Name, decl.Recv, pos.Line)
+									reportMethod(pos.Filename, decl.Name.Name, decl.Recv, pos)
 								} else {
 									contextParam := &ast.Field{
 										Names: []*ast.Ident{ast.NewIdent("ctx")},
@@ -103,7 +103,7 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 						if !hasContextParam(method.Params.List) {
 							if config.Dryrun {
 								pos := fs.Position(m.Pos())
-								reportInterface(pos.Filename, m.Names[0].Name, decl, pos.Line)
+								reportInterface(pos.Filename, m.Names[0].Name, decl, pos)
 							} else {
 								contextParam := &ast.Field{
 									Names: []*ast.Ident{ast.NewIdent("ctx")},
@@ -153,11 +153,11 @@ func hasContextParam(fields []*ast.Field) bool {
 	return false
 }
 
-func reportInterface(filename, funcName string, typeSpec *ast.TypeSpec, line int) {
-	fmt.Printf("%s at line %d: %s.%s()\n", filename, line, typeSpec.Name.Name, funcName)
+func reportInterface(filename, funcName string, typeSpec *ast.TypeSpec, pos token.Position) {
+	fmt.Printf("%s:%d:%d %s.%s() missing context.Context parameter\n", filename, pos.Line, pos.Column, typeSpec.Name.Name, funcName)
 }
 
-func reportMethod(filename, funcName string, recv *ast.FieldList, line int) {
+func reportMethod(filename, funcName string, recv *ast.FieldList, pos token.Position) {
 	var recvName string
 	if recv != nil && len(recv.List) > 0 {
 		if len(recv.List[0].Names) > 0 {
@@ -167,5 +167,5 @@ func reportMethod(filename, funcName string, recv *ast.FieldList, line int) {
 		}
 	}
 
-	fmt.Printf("%s at line %d: %s.%s()\n", filename, line, recvName, funcName)
+	fmt.Printf("%s:%d:%d: %s.%s() missing context.Context parameter\n", filename, pos.Line, pos.Column, recvName, funcName)
 }
