@@ -153,8 +153,12 @@ func hasContextParam(fields []*ast.Field) bool {
 	return false
 }
 
+const (
+	methodErrorFormat = "%s:%d:%d: %s.%s() missing context.Context parameter\n"
+)
+
 func reportInterface(filename, funcName string, typeSpec *ast.TypeSpec, pos token.Position) {
-	fmt.Printf("%s:%d:%d %s.%s() missing context.Context parameter\n", filename, pos.Line, pos.Column, typeSpec.Name.Name, funcName)
+	fmt.Printf(methodErrorFormat, filename, pos.Line, pos.Column, typeSpec.Name.Name, funcName)
 }
 
 func reportMethod(filename, funcName string, recv *ast.FieldList, pos token.Position) {
@@ -167,5 +171,5 @@ func reportMethod(filename, funcName string, recv *ast.FieldList, pos token.Posi
 		}
 	}
 
-	fmt.Printf("%s:%d:%d: %s.%s() missing context.Context parameter\n", filename, pos.Line, pos.Column, recvName, funcName)
+	fmt.Printf(methodErrorFormat, filename, pos.Line, pos.Column, recvName, funcName)
 }
