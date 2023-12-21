@@ -15,10 +15,11 @@ import (
 )
 
 type formatDefConfig struct {
-	IgnoreFuncs   []string
-	Dryrun        bool
-	SkipMethod    bool
-	SkipInterface bool
+	IgnoreFuncs     []string
+	AllowInterfaces []string
+	Dryrun          bool
+	SkipMethod      bool
+	SkipInterface   bool
 }
 
 func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
@@ -48,26 +49,27 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 				return true
 			}
 			if decl.Name != nil {
-				// if !isIgnoreFunc(decl.Name.Name) {
-				if !isIgnoreFunc(decl.Name.Name, config.IgnoreFuncs) {
-					if decl.Recv != nil {
-						if decl.Type.Params != nil && len(decl.Type.Params.List) > 0 {
-							if unicode.IsUpper(rune(decl.Name.Name[0])) {
-								if !hasContextParam(decl.Type.Params.List) {
-									if config.Dryrun {
-										pos := fs.Position(decl.Pos())
-										reportMethod(pos.Filename, decl.Name.Name, decl.Recv, pos.Line)
-									} else {
-										contextParam := &ast.Field{
-											Names: []*ast.Ident{ast.NewIdent("ctx")},
-											Type: &ast.SelectorExpr{
-												X:   ast.NewIdent("context"),
-												Sel: ast.NewIdent("Context"),
-											},
-										}
-										decl.Type.Params.List = append([]*ast.Field{contextParam}, decl.Type.Params.List...)
-										isApply = true
+				if len(config.IgnoreFuncs) > 0 && containPartial(config.IgnoreFuncs, decl.Name.Name) {
+					return true
+				}
+
+				if decl.Recv != nil {
+					if decl.Type.Params != nil && len(decl.Type.Params.List) > 0 {
+						if unicode.IsUpper(rune(decl.Name.Name[0])) {
+							if !hasContextParam(decl.Type.Params.List) {
+								if config.Dryrun {
+									pos := fs.Position(decl.Pos())
+									reportMethod(pos.Filename, decl.Name.Name, decl.Recv, pos.Line)
+								} else {
+									contextParam := &ast.Field{
+										Names: []*ast.Ident{ast.NewIdent("ctx")},
+										Type: &ast.SelectorExpr{
+											X:   ast.NewIdent("context"),
+											Sel: ast.NewIdent("Context"),
+										},
 									}
+									decl.Type.Params.List = append([]*ast.Field{contextParam}, decl.Type.Params.List...)
+									isApply = true
 								}
 							}
 						}
@@ -80,7 +82,13 @@ func fmtDef(fs *token.FileSet, fileName string, config formatDefConfig) error {
 				return true
 			}
 			if interfaceType, ok := decl.Type.(*ast.InterfaceType); ok {
+				if len(config.AllowInterfaces) > 0 && !containPartial(config.AllowInterfaces, decl.Name.Name) {
+					return true
+				}
 				for _, m := range interfaceType.Methods.List {
+					if len(config.IgnoreFuncs) > 0 && containPartial(config.IgnoreFuncs, m.Names[0].Name) {
+						return true
+					}
 					if method, ok := m.Type.(*ast.FuncType); ok {
 						if !hasContextParam(method.Params.List) {
 							if config.Dryrun {
